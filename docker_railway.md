@@ -1,4 +1,52 @@
-# CRMLite Docker Deployment
+# CRMLite Deployment Guide
+
+Документация по развёртыванию CRMLite на Docker (Railway) и Docker Compose (локально).
+
+## Содержание
+
+1. [Деплой на Railway](#деплой-на-railway)
+2. [Деплой с Docker Compose](#деплой-с-docker-compose)
+3. [Переменные окружения](#переменные-окружения)
+4. [API Endpoints](#api-endpoints)
+5. [Production рекомендации](#production-рекомендации)
+
+---
+
+## Деплой на Railway
+
+### Шаг 1: Подключение PostgreSQL
+
+1. Создайте новый проект в [Railway](https://railway.app)
+2. Добавьте **PostgreSQL** плагин к проекту
+3. После создания Railway автоматически создаст переменную `DATABASE_URL`
+
+### Шаг 2: Настройка переменных окружения
+
+В Railway Dashboard добавьте переменные:
+
+| Переменная | Значение |
+|------------|----------|
+| `SECRET_KEY` | Сгенерируйте новый случайный ключ |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `your-app.railway.app` (домен Railway) |
+
+### Шаг 3: Деплой
+
+1. Подключите GitHub репозиторий к Railway
+2. Выберите `FinalProjectGitHubDocker/KursFinalProject` как корень сервиса
+3. Railway автоматически найдёт Dockerfile и выполнит сборку
+
+### Шаг 4: Настройка start command (если нужно)
+
+Если Railway не определил команду автоматически, укажите в настройках:
+
+```
+sh /app/entrypoint.sh
+```
+
+---
+
+## Деплой с Docker Compose
 
 Документация по развёртыванию CRMLite с использованием Docker и Docker Compose.
 
@@ -100,6 +148,32 @@ docker-compose down -v
 - **ReDoc**: http://localhost/api/redoc/
 
 ## Переменные окружения
+
+### Переменные для Railway
+
+При деплое на Railway с PostgreSQL, настройте следующие переменные в Railway Dashboard:
+
+| Переменная | Описание | Пример значения |
+|------------|----------|-----------------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/dbname` |
+| `SECRET_KEY` | Секретный ключ Django | (сгенерируйте новый) |
+| `DEBUG` | Режим отладки | `False` |
+| `ALLOWED_HOSTS` | Разрешённые хосты | `your-app.railway.app` |
+
+**Важно:** В Railway переменная `DATABASE_URL` заполняется автоматически после подключения PostgreSQL через переменные:
+
+```
+DATABASE_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}"
+```
+
+Или публичный URL:
+```
+DATABASE_PUBLIC_URL="postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}/${{PGDATABASE}}"
+```
+
+Для приватного подключения (рекомендуется) используйте `DATABASE_URL`.
+
+### Переменные для Docker Compose (локально)
 
 | Переменная | Описание | Значение по умолчанию |
 |------------|----------|----------------------|

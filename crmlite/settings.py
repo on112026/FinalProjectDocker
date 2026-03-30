@@ -85,8 +85,66 @@ WSGI_APPLICATION = 'crmlite.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 # Database configuration
-# Uses PostgreSQL if DATABASE_ENGINE is set, otherwise falls back to SQLite
-if os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql':
+# Supports multiple sources:
+# 1. DATABASE_URL (Railway, Docker, etc.) - full PostgreSQL connection string
+# 2. Individual DATABASE_* variables (for backward compatibility)
+# 3. Falls back to SQLite for development
+
+def parse_database_url(url):
+    """Parse a PostgreSQL connection URL into components."""
+    if not url:
+        return None
+    
+    # Handle postgres:// and postgresql:// prefixes
+    if url.startswith('postgres://'):
+        url = 'postgresql://' + url[11:]
+    
+    if not url.startswith('postgresql://'):
+        return None
+    
+    # Parse the URL
+    # Format: postgresql://user:password@host:port/dbname
+    from urllib.parse import urlparse
+    
+    parsed = urlparse(url)
+    
+    return {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': parsed.path.lstrip('/') or 'crmlite',
+        'USER': parsed.username or '',
+        'PASSWORD': parsed.password or '',
+        'HOST': parsed.hostname or 'localhost',
+        'PORT': str(parsed.port) if parsed.port else '5432',
+    }
+
+
+# Try to get database config from DATABASE_URL (Railway, etc.)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    db_config = parse_database_url(DATABASE_URL)
+    if db_config:
+        DATABASES = {'default': db_config}
+    elif os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql':
+        # Fallback to individual variables if DATABASE_URL parsing failed
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': os.environ.get('DATABASE_NAME', 'crmlite'),
+                'USER': os.environ.get('DATABASE_USER', 'crmlite_user'),
+                'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
+                'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
+                'PORT': os.environ.get('DATABASE_PORT', '5432'),
+            }
+        }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+elif os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql':
+    # Use individual DATABASE_* variables
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -98,6 +156,7 @@ if os.environ.get('DATABASE_ENGINE') == 'django.db.backends.postgresql':
         }
     }
 else:
+    # Fallback to SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
