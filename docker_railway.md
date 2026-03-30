@@ -2,32 +2,11 @@
 
 Документация по развёртыванию CRMLite с использованием Docker и Docker Compose.
 
-## Структура проекта
-
-```
-FinalProjectGitHubDocker/
-├── Dockerfile                 # Образ Django приложения
-├── docker-compose.yml        # Оркестрация сервисов
-├── nginx.conf                # Конфигурация Nginx
-├── entrypoint.sh              # Скрипт запуска
-├── .dockerignore              # Исключения для Docker
-├── .env.example               # Пример переменных окружения
-└── KursFinalProject/          # Django проект
-    └── crmlite/
-        └── settings.py        # Обновлённые настройки
-```
-
 ## Быстрый старт
 
 ### 1. Подготовка
 
-Скопируйте файл переменных окружения:
-
-```bash
-cp .env.example .env
-```
-
-Отредактируйте `.env` файл, указав реальные значения:
+Отредактируйте `.env` файл, указав реальные значения или создайте на сервере необходимые переменные окружения:
 
 ```bash
 SECRET_KEY=ваш-уникальный-секретный-ключ
@@ -114,7 +93,7 @@ docker-compose down -v
 
 ## API Endpoints
 
-После запуска приложение будет доступно по адресу:
+После запуска приложение будет доступно по адресу (вместо localhost будет your-domain.com если есть установлена переменная ALLOWED_HOSTS=your-domain.com):
 
 - **API**: http://localhost/api/
 - **Swagger UI**: http://localhost/api/swagger/
