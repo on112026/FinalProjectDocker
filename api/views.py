@@ -422,6 +422,27 @@ class ProductDetailView(GenericAPIView):
         if 'quantity' in data:
             del data['quantity']
 
+        serializer = ProductCreateSerializer(product, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(ProductSerializer(product).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        request=ProductCreateSerializer,
+        responses={200: ProductSerializer},
+        operation_id="products_partial_update"
+    )
+    def patch(self, request, product_id):
+        product = self.get_object(product_id, request.user)
+        if not product:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Нельзя изменять quantity напрямую - только через поставку
+        data = request.data.copy()
+        if 'quantity' in data:
+            del data['quantity']
+
         serializer = ProductCreateSerializer(product, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
